@@ -3,6 +3,7 @@ from ex2utils import Server
 
 class MyServer(Server):
     num_clients = 0
+    usernames = []
     
     def onStart(self):
         self.printOutput('My server has started')
@@ -21,6 +22,18 @@ class MyServer(Server):
         self.printOutput(f'{MyServer.num_clients} active clients')
 
     def onMessage(self, socket, message):
+        self.printOutput(message)
+
+        if message.strip() == '':
+            self.printOutput('Received empty message.')
+            return True
+
+        message_split = message.split()
+        command = message_split[0]
+        params = message_split[1:]
+        self.printOutput(f'Command: {command}')
+        self.printOutput(f'Params: {params}')
+
         message = message.encode()
         socket.send(message)
 
