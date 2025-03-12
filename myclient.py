@@ -10,7 +10,6 @@ from ex2utils import Client
 import time
 
 class MyClient(Client):
-    client_quit = False
     
     def onMessage(self, socket, message):
         if message == 'invalid username':
@@ -19,8 +18,7 @@ class MyClient(Client):
         elif message == 'user already registered':
             username = input('User already registered. Register with a new username: ')
             socket.send(b'register ' + username.encode())
-
-        if message == 'invalid protocol' or message == 'unknown command':
+        elif message == 'invalid protocol' or message == 'unknown command':
             command = input('Invalid command. Try again: ')
             socket.send(command.encode())
         else:
