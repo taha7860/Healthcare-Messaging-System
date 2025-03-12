@@ -9,7 +9,7 @@
     },
     "send_one": {
         "description": "Send a message to a specific user",
-        "command": "send_to %user% %msg%"
+        "command": "send_one %user% %msg%"
     },
     "online_users": {
         "description": "Get the list of all online users",

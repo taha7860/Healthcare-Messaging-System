@@ -20,13 +20,12 @@ class MyServer(Server):
         self.num_clients -= 1
         self.printOutput('a client disconnected')
         self.printOutput(f'{self.num_clients} active clients')
-        del self.users[socket.username]
 
     def onMessage(self, socket, message):
         self.printOutput(message)
 
         if message.strip() == '':
-            self.printOutput('Received empty message.')
+            socket.send('received empty message')
             return True
 
         message_split = message.split()
@@ -45,6 +44,7 @@ class MyServer(Server):
             self.online_users(params, socket)
         elif command == 'close_connection':
             self.close_connection(params, socket)
+            return False
         else:
             socket.send(b'unknown command')
 
@@ -52,7 +52,7 @@ class MyServer(Server):
     
     def register(self, user, socket):
         if len(user) == 0 or len(user) > 1:
-            socket.send(b'Invalid protocol')
+            socket.send(b'invalid username')
             return True
         if user[0] in self.users:
             socket.send(b'user already registered')
@@ -65,43 +65,54 @@ class MyServer(Server):
 
     def send_all(self, text, socket):
         if not text:
-            socket.send(b'Invalid protocol')
+            socket.send(b'invalid protocol')
             return True
         
         msg = ' '.join(text)
-        socket.send(b'Your message: ' + msg.encode())
+        socket.send(b'your message to everyone: ' + msg.encode())
         for user, r_socket in self.users.items():
             if user != socket.username:
-                r_socket.send(b'message from ' + self.username.encode() + b': ' + msg.encode())
+                r_socket.send(b'message from ' + socket.username.encode() + b': ' + msg.encode())
         return True
 
     def send_one(self, params, socket):
         if len(params) <= 1:
-            socket.send(b'Invalid protocol')
+            socket.send(b'invalid protocol')
             return True
         elif params[0] not in self.users:
-            socket.send(b'not registered')
+            socket.send(b'user sending to is not registered')
             return True
         
         recipient = params[0]
         msg = ' '.join(params[1:])
 
-        socket.send(b'Your message: ' + msg.encode())
-        self.users[recipient].send(b'message from ' + self.username.encode() + b': ' + msg.encode())
+        socket.send(b'your message to ' + recipient.encode() + b': ' + msg.encode())
+        self.users[recipient].send(b'message from ' + socket.username.encode() + b': ' + msg.encode())
         return True
 
     def online_users(self, params, socket):
         if params:
-            socket.send(b'Invalid protocol')
+            socket.send(b'invalid protocol')
             return True
 
-        socket.send(b'users online:' + ', '.join(self.users).encode())
+        socket.send(b'users online: ' + ', '.join(self.users).encode())
         return True
 
     def close_connection(self, params, socket):
         if params:
-            socket.send(b'Invalid protocol')
+            socket.send(b'invalid protocol')
             return True
+        
+        if socket.username in self.users:
+            del self.users[socket.username]
+
+        user = socket.username if socket.username else 'a user'
+        socket.send(b'disconnecting...')
+        self.printOutput(f'{user} disconnected')
+
+        socket.close()
+
+        return True
 
 
 
