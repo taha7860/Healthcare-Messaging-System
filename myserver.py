@@ -3,15 +3,15 @@ from ex2utils import Server
 
 class MyServer(Server):
     def onStart(self):
-        self.num_clients = 0
-        self.users = {}
+        self.num_clients = 0 # keeps count of connected clients
+        self.users = {} # maps clients to their sockets, also used to check if username is already taken
         self.printOutput('My server has started')
 
     def onStop(self):
         self.printOutput('My server has stopped')
 
     def onConnect(self, socket):
-        socket.username = None
+        socket.username = None # initialises the client's username
         self.num_clients += 1
         self.printOutput('new client connected')
         self.printOutput(f'{self.num_clients} active clients')
@@ -22,18 +22,21 @@ class MyServer(Server):
         self.printOutput(f'{self.num_clients} active clients')
 
     def onMessage(self, socket, message):
+        """ Processes incoming messages from clients. """
         self.printOutput(message)
 
         if message.strip() == '':
-            socket.send('received empty message')
+            socket.send(b'received empty message')
             return True
 
+        # commands and parameters are extracted
         message_split = message.split()
         command = message_split[0]
         params = message_split[1:]
         self.printOutput(f'Command: {command}')
         self.printOutput(f'Params: {params}')
 
+        # command is processed and appropriate function is invoked, or correct message is displayed
         if command == 'register':
             self.register(params, socket)
         elif command == 'send_all':
@@ -44,13 +47,14 @@ class MyServer(Server):
             self.online_users(params, socket)
         elif command == 'close_connection':
             self.close_connection(params, socket)
-            return False
+            return False # stops server implementation form invoking onMessage and causing exception
         else:
             socket.send(b'unknown command')
 
         return True
     
     def register(self, user, socket):
+        """ Handles user registration. """
         if len(user) == 0 or len(user) > 1:
             socket.send(b'invalid username')
             return True
@@ -61,10 +65,11 @@ class MyServer(Server):
         socket.username = user[0]
         socket.send(b'registered successfully')
         self.printOutput(f'{socket.username} registered')
-        self.users[socket.username] = socket
+        self.users[socket.username] = socket # maps client username to the client socket
         return True
 
     def send_all(self, text, socket):
+        """ Sends a message to all connected users. """
         if socket.username is None:
             socket.send(b'not registered')
             return True
@@ -75,11 +80,12 @@ class MyServer(Server):
         msg = ' '.join(text)
         socket.send(b'your message to everyone: ' + msg.encode())
         for user, r_socket in self.users.items():
-            if user != socket.username:
+            if user != socket.username: # sends message to everyone except the user that sends the message
                 r_socket.send(b'message from ' + socket.username.encode() + b': ' + msg.encode())
         return True
 
     def send_one(self, params, socket):
+        """ Sends a private message to a specific user. """
         if socket.username is None:
             socket.send(b'not registered')
             return True
@@ -94,10 +100,13 @@ class MyServer(Server):
         msg = ' '.join(params[1:])
 
         socket.send(b'your message to ' + recipient.encode() + b': ' + msg.encode())
+
+        # sends message to appropriate client terminal using dictionary mapping
         self.users[recipient].send(b'message from ' + socket.username.encode() + b': ' + msg.encode())
         return True
 
     def online_users(self, params, socket):
+        """ Lists all currently connected users. """
         if params:
             socket.send(b'invalid protocol')
             return True
@@ -106,12 +115,13 @@ class MyServer(Server):
         return True
 
     def close_connection(self, params, socket):
+        """ Handles client disconnection requests. """
         if params:
             socket.send(b'invalid protocol')
             return True
         
         if socket.username in self.users:
-            del self.users[socket.username]
+            del self.users[socket.username] # deletes dictionary entry for disconnecting client
         
         socket.send(b'Client exiting')
 
