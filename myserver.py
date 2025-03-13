@@ -59,11 +59,14 @@ class MyServer(Server):
             return True
         
         socket.username = user[0]
-        socket.send(b'registered successfully')
+        socket.send(self.username.encode() + b' registered')
         self.users[socket.username] = socket
         return True
 
     def send_all(self, text, socket):
+        if socket.username is None:
+            socket.send(b'not registered')
+            return True
         if not text:
             socket.send(b'invalid protocol')
             return True
@@ -76,6 +79,9 @@ class MyServer(Server):
         return True
 
     def send_one(self, params, socket):
+        if socket.username is None:
+            socket.send(b'not registered')
+            return True
         if len(params) <= 1:
             socket.send(b'invalid protocol')
             return True
@@ -107,7 +113,7 @@ class MyServer(Server):
             del self.users[socket.username]
 
         user = socket.username if socket.username else 'a user'
-        socket.send(b'disconnecting...')
+        socket.send(b'Client exiting')
         self.printOutput(f'{user} disconnected')
 
         socket.close()
