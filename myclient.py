@@ -22,7 +22,7 @@ class MyClient(Client):
             command = input('Invalid command. Try again: ')
             socket.send(command.encode())
         else:
-            print(message)
+            print('\n' + message)
         
         return True
 

@@ -59,7 +59,7 @@ class MyServer(Server):
             return True
         
         socket.username = user[0]
-        socket.send(self.username.encode() + b' registered')
+        socket.send(socket.username.encode() + b' registered')
         self.users[socket.username] = socket
         return True
 
