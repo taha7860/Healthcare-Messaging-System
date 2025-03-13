@@ -111,10 +111,8 @@ class MyServer(Server):
         
         if socket.username in self.users:
             del self.users[socket.username]
-
-        user = socket.username if socket.username else 'a user'
+        
         socket.send(b'Client exiting')
-        self.printOutput(f'{user} disconnected')
 
         socket.close()
 
