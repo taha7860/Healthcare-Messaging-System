@@ -17,18 +17,20 @@ Running:
 
 Testing:
 1. **Register:** Enter a username when prompted.
-   - Example: `alice` → Server: `alice registered`
+   - Example: `alice` → Server: `register alice`
    If username taken or is more than one word, prompted again.
-2. **Check online users:** `online_users`
-   Asks you to prompt again if you type the command with a message.
-3. **Send to all:** `send_all Hello everyone!`
+2. **Send to all:** `send_all Hello everyone!`
+   For this, start more clients and register with them.
    Sends message to every user that is registered.
-4. **Send to one:** `send_one bob Hi Bob!`
+3. **Send to one:** `send_one bob Hi Bob!`
    Sends message to specified user.
-5. **Invalid command:** `some_invalid_command` → Response: `unknown command`
+4. **Check online users:** `online_users`
+   Asks you to prompt again if you type the command with a message.
+5. **Invalid command:** `some_invalid_command` → Response: `Invalid command. Try again.`
 6. **Close connection:** `close_connection`
    - Client: `Client exiting`
-   - Server: `alice disconnected`
+   - Server: `a client disconnected`
+   Closes client console for specific client instance.
 """
 
 import sys
@@ -40,6 +42,7 @@ class MyClient(Client):
     registered = False
     
     def onMessage(self, socket, message):
+        # message is what is sent by the server with socket.send()
         if message == 'invalid username':
             print('Username does not allow spaces, please try again.')
         elif message == 'user already registered':
@@ -47,7 +50,7 @@ class MyClient(Client):
         elif message == 'invalid protocol' or message == 'unknown command':
             print('Invalid command. Try again.')
         else:
-            MyClient.registered = True
+            MyClient.registered = True # allows termination of initial loop
             print('\n' + message)
         
         return True
@@ -63,16 +66,16 @@ client = MyClient()
 # Start server
 client.start(ip, port)
 
-#send message to the server
+# loops until user is registered
 while not MyClient.registered:
     username = input('Enter your username: ')
-    client.send(b'register ' + username.encode())
+    client.send(b'register ' + username.encode()) # sends command to the server
 
 while True:
     command = input('Enter your command: ')
     client.send(command.encode())
     
-    if command == 'close_connection':
+    if command == 'close_connection': # terminates loop when the client's connection to the server is closed
         break
 
 #stops client
